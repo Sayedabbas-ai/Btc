@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BTC App - Test Feedback</title>
+</head>
+<body style="margin:0;padding:16px;background:#F2F0F4;min-height:100vh">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
+
+<style>
+  :root{
+    --navy:#202A44; --red:#CE0037; --indigo:#4F55D9; --gray:#E5E1E6;
+    --ink:#202A44; --muted:#6B7383; --line:#DFDCE2; --ok:#56B093; --warn:#FF4F41;
+  }
+  *{box-sizing:border-box}
+  .btc{font-family:Verdana,'Segoe UI',system-ui,sans-serif;color:var(--ink);max-width:600px;margin:0 auto;
+       background:#fff;border-radius:20px;overflow:hidden;border:1px solid var(--line)}
+  .btc h1,.btc h2,.btc h3{font-family:Kanit,Verdana,sans-serif;font-weight:600;letter-spacing:.2px}
+
+  .hd{background:linear-gradient(125deg,var(--navy) 0%,var(--navy) 42%,var(--red) 100%);
+      color:#fff;padding:22px 20px 18px;position:relative;overflow:hidden}
+  .hd svg.mark{position:absolute;right:-26px;top:-18px;opacity:.16}
+  .hd h1{font-size:21px;margin:0;line-height:1.15}
+  .hd p{margin:6px 0 0;font-size:11.5px;opacity:.78;line-height:1.5;max-width:340px}
+
+  .tabs{display:flex;border-bottom:1px solid var(--line);background:#fff}
+  .tab{flex:1;padding:13px 8px;border:0;background:none;font-family:Kanit,sans-serif;font-size:13.5px;
+       font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent}
+  .tab[aria-selected="true"]{color:var(--navy);border-bottom-color:var(--red)}
+  .tab:focus-visible{outline:2px solid var(--indigo);outline-offset:-3px}
+
+  .pane{padding:20px}
+  .pane[hidden]{display:none}
+
+  .fld{margin-bottom:20px}
+  .lbl{display:flex;align-items:baseline;gap:7px;margin-bottom:9px}
+  .lbl b{font-family:Kanit,sans-serif;font-weight:600;font-size:13.5px}
+  .lbl span{font-size:10.5px;color:var(--muted);text-transform:uppercase;letter-spacing:.7px}
+
+  .chips{display:flex;flex-wrap:wrap;gap:7px}
+  .chip{font-family:Verdana,sans-serif;font-size:12px;padding:9px 13px;border-radius:999px;border:1px solid var(--line);
+        background:#fff;color:var(--ink);cursor:pointer;line-height:1.1;transition:background .12s,border-color .12s,color .12s}
+  .chip:hover{border-color:var(--navy)}
+  .chip[aria-pressed="true"]{background:var(--navy);border-color:var(--navy);color:#fff}
+  .chip[aria-pressed="true"][data-tone="good"]{background:var(--ok);border-color:var(--ok)}
+  .chip[aria-pressed="true"][data-tone="bad"]{background:var(--warn);border-color:var(--warn)}
+  .chip:focus-visible{outline:2px solid var(--indigo);outline-offset:2px}
+
+  .seg{display:flex;gap:8px}
+  .seg .chip{flex:1;text-align:center;padding:13px 4px;font-family:Kanit,sans-serif;font-weight:600;font-size:13.5px}
+  .seg .chip[aria-pressed="true"]{background:var(--red);border-color:var(--red);color:#fff}
+
+  .rate{display:flex;gap:7px}
+  .rate button{flex:1;aspect-ratio:1/1;max-height:52px;border-radius:12px;border:1px solid var(--line);background:#fff;
+               cursor:pointer;font-family:Kanit,sans-serif;font-weight:600;font-size:15px;color:var(--muted)}
+  .rate button[aria-pressed="true"]{background:var(--indigo);border-color:var(--indigo);color:#fff}
+  .rate button:focus-visible{outline:2px solid var(--indigo);outline-offset:2px}
+  .ratekey{display:flex;justify-content:space-between;font-size:10px;color:var(--muted);margin-top:6px}
+
+  textarea,input[type=text],input[type=password]{width:100%;font-family:Verdana,sans-serif;font-size:13px;padding:12px;
+    border-radius:12px;border:1px solid var(--line);background:#FBFAFC;color:var(--ink);resize:vertical}
+  textarea{min-height:96px;line-height:1.55}
+  textarea:focus,input:focus{outline:none;border-color:var(--indigo);background:#fff}
+
+  .drop{border:1.5px dashed var(--line);border-radius:14px;padding:18px;text-align:center;cursor:pointer;background:#FBFAFC}
+  .drop:hover{border-color:var(--indigo)}
+  .drop b{display:block;font-family:Kanit,sans-serif;font-size:13px;margin-bottom:3px}
+  .drop span{font-size:10.5px;color:var(--muted)}
+  .thumbs{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+  .thumb{position:relative;width:64px;height:84px;border-radius:9px;overflow:hidden;border:1px solid var(--line)}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .thumb button{position:absolute;top:3px;right:3px;width:19px;height:19px;border-radius:50%;border:0;
+                background:rgba(32,42,68,.85);color:#fff;font-size:12px;line-height:1;cursor:pointer;padding:0}
+
+  .submit{width:100%;padding:16px;border:0;border-radius:14px;background:var(--red);color:#fff;
+          font-family:Kanit,sans-serif;font-weight:600;font-size:15px;cursor:pointer}
+  .submit:disabled{background:var(--gray);color:var(--muted);cursor:not-allowed}
+  .submit:focus-visible{outline:3px solid var(--indigo);outline-offset:2px}
+  .hint{font-size:11px;color:var(--muted);margin-top:10px;text-align:center;line-height:1.5}
+  .err{color:var(--red);font-size:11.5px;margin-top:10px;text-align:center;min-height:14px}
+
+  .done{text-align:center;padding:46px 20px}
+  .done h2{font-size:20px;margin:16px 0 6px}
+  .done p{font-size:12.5px;color:var(--muted);margin:0 0 22px;line-height:1.6}
+  .ghost{padding:13px 22px;border:1px solid var(--navy);background:#fff;border-radius:12px;
+         font-family:Kanit,sans-serif;font-weight:600;font-size:13.5px;color:var(--navy);cursor:pointer}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-bottom:20px}
+  .stat{background:#F7F6F8;border-radius:12px;padding:12px 6px;text-align:center}
+  .stat b{display:block;font-family:Kanit,sans-serif;font-size:20px;line-height:1}
+  .stat span{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px}
+
+  .vsrow{display:flex;gap:7px;margin-bottom:6px}
+  .vs{flex:1;border:1px solid var(--line);border-radius:12px;padding:11px}
+  .vs h4{margin:0 0 7px;font-family:Kanit,sans-serif;font-size:11px;letter-spacing:.6px;text-transform:uppercase}
+  .vs .big{font-family:Kanit,sans-serif;font-size:23px;line-height:1}
+  .vs .sub{font-size:10px;color:var(--muted);margin-top:3px}
+  .bar{height:5px;border-radius:3px;background:var(--gray);margin-top:9px;overflow:hidden}
+  .bar i{display:block;height:100%;background:var(--indigo)}
+
+  .pgrow{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid #F0EEF2;font-size:11.5px}
+  .pgrow .nm{flex:1}
+  .pgrow .ct{color:var(--muted);font-size:10.5px}
+  .dot{width:7px;height:7px;border-radius:50%;background:var(--ok);flex:none}
+  .dot.bug{background:var(--warn)}
+
+  .entry{border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:8px}
+  .entry.good{border-left:3px solid var(--ok)}
+  .entry.bad{border-left:3px solid var(--warn)}
+  .entry .top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:7px}
+  .tag{font-size:9.5px;text-transform:uppercase;letter-spacing:.6px;padding:3px 7px;border-radius:5px;
+       background:var(--gray);color:var(--navy);font-family:Kanit,sans-serif;font-weight:600}
+  .tag.v{background:var(--navy);color:#fff}
+  .tag.b{background:var(--warn);color:#fff}
+  .tag.g{background:var(--ok);color:#fff}
+  .entry p{margin:0;font-size:12px;line-height:1.6}
+  .entry .meta{font-size:10px;color:var(--muted);margin-top:7px;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .shotbtn{border:1px solid var(--line);background:#fff;border-radius:8px;padding:5px 9px;font-size:10px;
+           cursor:pointer;color:var(--navy);font-family:Verdana,sans-serif}
+  .shots{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+  .shots img{width:78px;height:104px;object-fit:cover;border-radius:9px;border:1px solid var(--line);cursor:zoom-in;background:#F7F6F8}
+  .del{border:0;background:none;color:var(--warn);font-size:10px;cursor:pointer;margin-left:auto;font-family:Verdana,sans-serif}
+
+  .secttl{font-family:Kanit,sans-serif;font-weight:600;font-size:11px;text-transform:uppercase;letter-spacing:1px;
+          color:var(--muted);margin:24px 0 8px}
+  .toolbar{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+  .toolbar button{flex:1;min-width:120px;padding:11px;border:1px solid var(--line);background:#fff;border-radius:11px;
+                  font-family:Kanit,sans-serif;font-size:12px;font-weight:600;color:var(--navy);cursor:pointer}
+  .toolbar button.danger{color:var(--warn);border-color:#F5D3D0}
+  .empty{text-align:center;color:var(--muted);font-size:12px;padding:34px 12px;line-height:1.6}
+  .filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+  .filters .chip{font-size:11px;padding:7px 11px}
+
+  .lock{text-align:center;padding:40px 20px}
+  .lock h3{font-size:16px;margin:0 0 6px}
+  .lock p{font-size:11.5px;color:var(--muted);margin:0 0 18px;line-height:1.6}
+  .lock input{max-width:220px;margin:0 auto 12px;text-align:center}
+
+  .lightbox{position:fixed;inset:0;background:rgba(32,42,68,.92);display:flex;align-items:center;justify-content:center;
+            z-index:99;padding:20px;cursor:zoom-out}
+  .lightbox img{max-width:100%;max-height:100%;border-radius:10px}
+
+  .setup{background:#FFF6E9;border:1px solid #F2DCB8;border-radius:12px;padding:14px;font-size:11.5px;line-height:1.6;margin-bottom:16px}
+  .setup b{font-family:Kanit,sans-serif}
+
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="btc">
+  <div class="hd">
+    <svg class="mark" width="150" height="150" viewBox="0 0 100 100" aria-hidden="true">
+      <circle cx="30" cy="30" r="22" fill="#fff"/><circle cx="30" cy="72" r="22" fill="#fff"/>
+      <rect x="56" y="8" width="40" height="84" rx="20" fill="#fff"/>
+    </svg>
+    <h1>BTC App &mdash; test feedback</h1>
+    <p>Tap through the app however you normally would. When something helps or annoys you, log it here. Takes about 20 seconds.</p>
+  </div>
+
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" aria-selected="true" id="t-form">Log feedback</button>
+    <button class="tab" role="tab" aria-selected="false" id="t-admin">Admin</button>
+  </div>
+
+  <!-- ================= FORM ================= -->
+  <div class="pane" id="p-form">
+    <div id="formBody">
+
+      <div class="setup" id="setupWarn" hidden>
+        <b>Setup needed:</b> the Google Apps Script URL hasn't been added yet.
+        Open this file and set <b>SCRIPT_URL</b> at the top of the script section.
+      </div>
+
+      <div class="fld">
+        <div class="lbl"><b>What are you testing on?</b></div>
+        <div class="seg" id="platform">
+          <button class="chip" aria-pressed="false" data-v="iOS">iOS</button>
+          <button class="chip" aria-pressed="false" data-v="Android">Android</button>
+          <button class="chip" aria-pressed="false" data-v="Web">Web</button>
+        </div>
+      </div>
+
+      <div class="fld">
+        <div class="lbl"><b>Where were you?</b></div>
+        <div class="chips" id="pages"></div>
+      </div>
+
+      <div class="fld">
+        <div class="lbl"><b>How did it feel?</b></div>
+        <div class="rate" id="rating"></div>
+        <div class="ratekey"><span>1 &middot; painful</span><span>5 &middot; effortless</span></div>
+      </div>
+
+      <div class="fld">
+        <div class="lbl"><b>What are you reporting?</b></div>
+        <div class="chips" id="kind"></div>
+      </div>
+
+      <div class="fld" id="sevWrap" hidden>
+        <div class="lbl"><b>How badly did it block you?</b></div>
+        <div class="chips" id="sev"></div>
+      </div>
+
+      <div class="fld" id="goodWrap" hidden>
+        <div class="lbl"><b>What made it good?</b><span>pick any</span></div>
+        <div class="chips" id="good"></div>
+      </div>
+
+      <div class="fld">
+        <div class="lbl"><b>Tell us more</b><span id="cmtReq">optional</span></div>
+        <textarea id="comment" placeholder="What did you tap, what did you expect, what happened instead?"></textarea>
+      </div>
+
+      <div class="fld">
+        <div class="lbl"><b>Screenshots</b><span>optional &middot; up to 3</span></div>
+        <div class="drop" id="drop" tabindex="0" role="button">
+          <b>Add a screenshot</b>
+          <span>Camera roll or screen grab &mdash; resized automatically</span>
+        </div>
+        <input type="file" id="file" accept="image/*" multiple hidden>
+        <div class="thumbs" id="thumbs"></div>
+      </div>
+
+      <div class="fld">
+        <div class="lbl"><b>Your name</b><span>optional</span></div>
+        <input type="text" id="who" placeholder="So we can follow up if needed">
+      </div>
+
+      <button class="submit" id="send">Send feedback</button>
+      <div class="err" id="err"></div>
+      <div class="hint">Everything you send is visible to the whole testing team. &middot; v4 (Sheets)</div>
+    </div>
+
+    <div class="done" id="doneBody" hidden>
+      <svg width="52" height="52" viewBox="0 0 100 100" aria-hidden="true">
+        <circle cx="30" cy="30" r="22" fill="#CE0037"/><circle cx="30" cy="72" r="22" fill="#CE0037"/>
+        <rect x="56" y="8" width="40" height="84" rx="20" fill="#202A44"/>
+      </svg>
+      <h2>Logged. Thank you.</h2>
+      <p id="doneLine">Keep testing &mdash; log the next thing whenever it comes up.</p>
+      <button class="ghost" id="again">Log another</button>
+    </div>
+  </div>
+
+  <!-- ================= ADMIN ================= -->
+  <div class="pane" id="p-admin" hidden>
+    <div class="lock" id="lock">
+      <h3>Admin view</h3>
+      <p>Enter the team passcode to see every submission, screenshots and exports. All data also lives in your Google Sheet.</p>
+      <input type="password" id="code" placeholder="Passcode">
+      <div><button class="ghost" id="unlock">Open dashboard</button></div>
+      <div class="err" id="lockErr"></div>
+    </div>
+    <div id="adminBody" hidden></div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   SETUP — paste your Google Apps Script web app URL here.
+   It looks like: https://script.google.com/macros/s/XXXX/exec
+   ============================================================ */
+const SCRIPT_URL = "https://script.google.com/macros/s/AKfycby7sEtl08QdF4tYTZW8tuJa-xy95N5xPJdLaKLvLlBv6YJ7Si4GdEWszG_sr5yVVWTfJw/exec";
+
+const PAGES = ["Login","Home Page","My Plan","Voya Roaming","Payments","Shop","My Account","Basma's Chat","Loading / skeleton","Somewhere else"];
+const KINDS = [
+  {k:"Bug",        tone:"bad"},
+  {k:"Confusing",  tone:"bad"},
+  {k:"Slow",       tone:"bad"},
+  {k:"Idea",       tone:""},
+  {k:"Works well", tone:"good"},
+  {k:"Love this",  tone:"good"}
+];
+const SEV  = ["Minor","Annoying","Blocked me"];
+const GOOD = ["Fast","Clear wording","Easy to find","Looks good","Smooth"];
+
+const state = {platform:null, page:null, rating:null, kind:null, sev:null, good:[], images:[]};
+
+const configured = SCRIPT_URL.indexOf("https://script.google.com/") === 0;
+if(!configured) document.getElementById("setupWarn").hidden = false;
+
+/* ---------- backend calls ---------- */
+async function apiPost(payload){
+  const res = await fetch(SCRIPT_URL, {
+    method: "POST",
+    headers: {"Content-Type": "text/plain;charset=utf-8"},   /* simple request: no CORS preflight */
+    body: JSON.stringify(payload)
+  });
+  const out = await res.json();
+  if(!out.ok) throw new Error(out.error || "request failed");
+  return out;
+}
+async function apiList(code){
+  const res = await fetch(SCRIPT_URL + "?action=list&code=" + encodeURIComponent(code));
+  const out = await res.json();
+  if(!out.ok) throw new Error(out.error || "request failed");
+  return out.recs || [];
+}
+
+/* ---------- controls ---------- */
+function chipRow(el, items, key, onPick){
+  el.innerHTML = "";
+  items.forEach(function(it){
+    const label = typeof it === "string" ? it : it.k;
+    const tone  = typeof it === "string" ? "" : it.tone;
+    const b = document.createElement("button");
+    b.className="chip"; b.type="button"; b.textContent=label; b.setAttribute("aria-pressed","false");
+    if(tone) b.dataset.tone = tone;
+    b.onclick = function(){
+      state[key] = state[key] === label ? null : label;
+      Array.from(el.children).forEach(function(c){ c.setAttribute("aria-pressed", String(c.textContent === state[key])); });
+      if(onPick) onPick();
+      validate();
+    };
+    el.appendChild(b);
+  });
+}
+function multiRow(el, items, key){
+  el.innerHTML = "";
+  items.forEach(function(label){
+    const b = document.createElement("button");
+    b.className="chip"; b.type="button"; b.textContent=label; b.dataset.tone="good"; b.setAttribute("aria-pressed","false");
+    b.onclick = function(){
+      const i = state[key].indexOf(label);
+      if(i>-1) state[key].splice(i,1); else state[key].push(label);
+      b.setAttribute("aria-pressed", String(i===-1));
+    };
+    el.appendChild(b);
+  });
+}
+chipRow(document.getElementById("pages"), PAGES, "page");
+chipRow(document.getElementById("sev"), SEV, "sev");
+multiRow(document.getElementById("good"), GOOD, "good");
+chipRow(document.getElementById("kind"), KINDS, "kind", function(){
+  const e = KINDS.find(function(x){return x.k === state.kind});
+  const bad = !!(e && e.tone === "bad"), good = !!(e && e.tone === "good");
+  document.getElementById("sevWrap").hidden  = !bad;
+  document.getElementById("goodWrap").hidden = !good;
+  document.getElementById("cmtReq").textContent = bad ? "required" : "optional";
+  if(!bad) state.sev = null;
+  if(!good){ state.good = []; document.querySelectorAll("#good .chip").forEach(function(c){c.setAttribute("aria-pressed","false")}); }
+});
+
+const platEl = document.getElementById("platform");
+Array.from(platEl.children).forEach(function(b){
+  b.onclick = function(){
+    state.platform = b.dataset.v;
+    Array.from(platEl.children).forEach(function(c){ c.setAttribute("aria-pressed", String(c.dataset.v === state.platform)); });
+    validate();
+  };
+});
+
+const rateEl = document.getElementById("rating");
+[1,2,3,4,5].forEach(function(n){
+  const b=document.createElement("button");
+  b.type="button"; b.textContent=n; b.setAttribute("aria-pressed","false"); b.setAttribute("aria-label", n+" out of 5");
+  b.onclick=function(){ state.rating=n; Array.from(rateEl.children).forEach(function(c,i){c.setAttribute("aria-pressed",String(i+1===n))}); validate(); };
+  rateEl.appendChild(b);
+});
+
+/* ---------- screenshots ---------- */
+const fileInput = document.getElementById("file");
+const drop = document.getElementById("drop");
+drop.onclick = function(){ fileInput.click(); };
+drop.onkeydown = function(e){ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); fileInput.click(); } };
+fileInput.onchange = function(){
+  const files = Array.from(fileInput.files).slice(0, 3 - state.images.length);
+  files.forEach(shrink);
+  fileInput.value = "";
+};
+function shrink(file){
+  const reader = new FileReader();
+  reader.onload = function(){
+    const img = new Image();
+    img.onload = function(){
+      let max = 1100, q = 0.6, out;
+      for(let t = 0; t < 5; t++){
+        const s = Math.min(1, max/Math.max(img.width, img.height));
+        const c = document.createElement("canvas");
+        c.width = Math.round(img.width*s); c.height = Math.round(img.height*s);
+        c.getContext("2d").drawImage(img,0,0,c.width,c.height);
+        out = c.toDataURL("image/jpeg", q);
+        if(out.length < 900000) break;           /* Apps Script handles large posts fine; keep shots under ~900KB */
+        max = Math.round(max*0.8); q = Math.max(0.4, q - 0.08);
+      }
+      state.images.push(out);
+      drawThumbs();
+    };
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+function drawThumbs(){
+  const box = document.getElementById("thumbs");
+  box.innerHTML = "";
+  state.images.forEach(function(src,i){
+    const d = document.createElement("div"); d.className="thumb";
+    const im = document.createElement("img"); im.src = src; im.alt = "Screenshot "+(i+1);
+    const x = document.createElement("button"); x.type="button"; x.textContent="\u00d7"; x.setAttribute("aria-label","Remove screenshot");
+    x.onclick = function(){ state.images.splice(i,1); drawThumbs(); };
+    d.appendChild(im); d.appendChild(x); box.appendChild(d);
+  });
+  drop.querySelector("b").textContent = state.images.length >= 3 ? "3 screenshots added" : "Add a screenshot";
+  drop.style.display = state.images.length >= 3 ? "none" : "block";
+}
+
+/* ---------- validation + submit ---------- */
+const sendBtn = document.getElementById("send"), cmt = document.getElementById("comment");
+cmt.addEventListener("input", validate);
+function isBad(k){ const e=KINDS.find(function(x){return x.k===k}); return !!(e && e.tone==="bad"); }
+function isGood(k){ const e=KINDS.find(function(x){return x.k===k}); return !!(e && e.tone==="good"); }
+function validate(){
+  const ok = configured && state.platform && state.page && state.rating && state.kind &&
+             (!isBad(state.kind) || cmt.value.trim().length > 3);
+  sendBtn.disabled = !ok;
+  return ok;
+}
+validate();
+
+sendBtn.onclick = async function(){
+  if(!validate()) return;
+  sendBtn.disabled = true; sendBtn.textContent = "Sending\u2026";
+  const wait = function(ms){ return new Promise(function(res){ setTimeout(res, ms); }); };
+  const id = Date.now() + "-" + Math.random().toString(36).slice(2,7);
+  const rec = {
+    id:id, platform:state.platform, page:state.page, rating:state.rating, kind:state.kind,
+    sev:state.sev, good:state.good.slice(), comment:cmt.value.trim(),
+    who:document.getElementById("who").value.trim(), images:state.images.slice(),
+    screen: window.innerWidth+"x"+window.innerHeight, at:new Date().toISOString()
+  };
+  let saved = false, lastErr = "";
+  for(let attempt = 0; attempt < 3 && !saved; attempt++){
+    if(attempt) await wait(1500*attempt);
+    try{ await apiPost({action:"add", rec:rec}); saved = true; }
+    catch(e){ lastErr = (e && e.message) ? e.message : String(e); }
+  }
+  if(saved){
+    document.getElementById("err").textContent = "";
+    document.getElementById("doneLine").textContent = isBad(state.kind)
+      ? "That one is flagged for the team. Keep testing \u2014 log the next thing whenever it comes up."
+      : "Good to hear. Keep testing \u2014 log the next thing whenever it comes up.";
+    document.getElementById("formBody").hidden = true;
+    document.getElementById("doneBody").hidden = false;
+  } else {
+    document.getElementById("err").textContent =
+      "Couldn't save (" + lastErr + "). Check your connection and tap Send again \u2014 your entry is still here.";
+    sendBtn.disabled = false;
+  }
+  sendBtn.textContent = "Send feedback";
+};
+
+document.getElementById("again").onclick = function(){
+  state.page=null; state.rating=null; state.kind=null; state.sev=null; state.good=[]; state.images=[];
+  cmt.value=""; drawThumbs();
+  document.querySelectorAll("#pages .chip, #kind .chip, #sev .chip, #good .chip, #rating button")
+    .forEach(function(c){ c.setAttribute("aria-pressed","false"); });
+  document.getElementById("sevWrap").hidden = true;
+  document.getElementById("goodWrap").hidden = true;
+  document.getElementById("cmtReq").textContent = "optional";
+  document.getElementById("err").textContent = "";
+  document.getElementById("doneBody").hidden = true;
+  document.getElementById("formBody").hidden = false;
+  validate(); window.scrollTo({top:0});
+};
+
+/* ---------- tabs ---------- */
+const tF = document.getElementById("t-form"), tA = document.getElementById("t-admin");
+tF.onclick = function(){ swap(true); };
+tA.onclick = function(){ swap(false); };
+function swap(form){
+  tF.setAttribute("aria-selected", String(form));
+  tA.setAttribute("aria-selected", String(!form));
+  document.getElementById("p-form").hidden = !form;
+  document.getElementById("p-admin").hidden = form;
+}
+
+/* ---------- admin ---------- */
+let ADMIN_PASS = "";
+document.getElementById("unlock").onclick = async function(){
+  const v = document.getElementById("code").value;
+  document.getElementById("lockErr").textContent = "";
+  try{
+    document.getElementById("unlock").textContent = "Checking\u2026";
+    const recs = await apiList(v);          /* passcode is verified by the server */
+    ADMIN_PASS = v;
+    document.getElementById("lock").hidden = true;
+    document.getElementById("adminBody").hidden = false;
+    ALL = recs.map(normalize).sort(function(a,b){ return a.at < b.at ? 1 : -1; });
+    render();
+  }catch(e){
+    document.getElementById("lockErr").textContent =
+      (e.message === "wrong passcode")
+        ? "That passcode doesn't match. Ask the app team for the current one."
+        : "Couldn't reach the server (" + e.message + "). Try again.";
+  }
+  document.getElementById("unlock").textContent = "Open dashboard";
+};
+document.getElementById("code").addEventListener("keydown", function(e){ if(e.key==="Enter") document.getElementById("unlock").click(); });
+
+let ALL = [];
+const filter = {platform:null, page:null, kind:null};
+
+function normalize(o){
+  return {
+    id: String(o.id), at: String(o.at), platform: String(o.platform||""), page: String(o.page||""),
+    rating: Number(o.rating)||0, kind: String(o.kind||""), sev: String(o.sev||""),
+    good: o.good ? String(o.good).split(" / ").filter(Boolean) : [],
+    comment: String(o.comment||""), who: String(o.who||""), screen: String(o.screen||""),
+    imgs: [o.img1, o.img2, o.img3].map(function(u){return String(u||"")}).filter(Boolean)
+  };
+}
+
+async function loadResults(){
+  const box = document.getElementById("adminBody");
+  box.innerHTML = '<div class="empty">Loading submissions\u2026</div>';
+  try{
+    const recs = await apiList(ADMIN_PASS);
+    ALL = recs.map(normalize).sort(function(a,b){ return a.at < b.at ? 1 : -1; });
+    render();
+  }catch(e){
+    box.innerHTML = '<div class="empty">Couldn\'t load submissions ('+esc(e.message)+'). Tap Refresh to retry.</div>';
+  }
+}
+
+function avg(a){ return a.length ? a.reduce(function(s,r){return s+r.rating},0)/a.length : 0; }
+function esc(s){ return String(s==null?"":s).replace(/[<>&"]/g,function(c){return ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'})[c]}); }
+
+function render(){
+  const box = document.getElementById("adminBody");
+  if(!ALL.length){
+    box.innerHTML = '<div class="empty">No submissions yet. As soon as the team starts testing, everything lands here \u2014 and in your Google Sheet.</div>'
+      + '<div class="toolbar"><button id="refresh">Refresh</button></div>';
+    document.getElementById("refresh").onclick = loadResults;
+    return;
+  }
+  const rows = ALL.filter(function(r){
+    return (!filter.platform || r.platform===filter.platform)
+        && (!filter.page || r.page===filter.page)
+        && (!filter.kind || (filter.kind==="Issues" ? isBad(r.kind) : filter.kind==="Positive" ? isGood(r.kind) : true));
+  });
+  const bugs = ALL.filter(function(r){return isBad(r.kind)});
+  const loves = ALL.filter(function(r){return isGood(r.kind)});
+
+  let h = '<div class="stats">'
+    + '<div class="stat"><b>'+ALL.length+'</b><span>Entries</span></div>'
+    + '<div class="stat"><b>'+avg(ALL).toFixed(1)+'</b><span>Avg ease</span></div>'
+    + '<div class="stat"><b style="color:var(--warn)">'+bugs.length+'</b><span>Issues</span></div>'
+    + '<div class="stat"><b style="color:var(--ok)">'+loves.length+'</b><span>Positive</span></div>'
+    + '</div>';
+
+  h += '<div class="secttl">By platform</div><div class="vsrow">';
+  ["iOS","Android","Web"].forEach(function(p,i){
+    const g = ALL.filter(function(r){return r.platform===p});
+    const col = ["var(--indigo)","var(--red)","var(--navy)"][i];
+    h += '<div class="vs"><h4>'+p+'</h4><div class="big">'+(g.length? avg(g).toFixed(1):'\u2014')+'</div>'
+       + '<div class="sub">'+g.length+' entries \u00b7 '+g.filter(function(r){return isBad(r.kind)}).length+' issues</div>'
+       + '<div class="bar"><i style="width:'+(avg(g)/5*100)+'%;background:'+col+'"></i></div></div>';
+  });
+  h += '</div>';
+
+  h += '<div class="secttl">By screen</div>';
+  PAGES.forEach(function(p){
+    const g = ALL.filter(function(r){return r.page===p});
+    if(!g.length) return;
+    const nb = g.filter(function(r){return isBad(r.kind)}).length;
+    h += '<div class="pgrow"><span class="dot'+(nb?' bug':'')+'"></span><span class="nm">'+esc(p)+'</span>'
+       + '<span class="ct">'+g.length+' \u00b7 '+avg(g).toFixed(1)+'/5'+(nb?' \u00b7 '+nb+' issue'+(nb>1?'s':''):'')+'</span></div>';
+  });
+
+  h += '<div class="secttl">Submissions ('+rows.length+')</div><div class="filters" id="filters"></div>';
+  rows.forEach(function(r){
+    const cls = isBad(r.kind) ? "bad" : isGood(r.kind) ? "good" : "";
+    h += '<div class="entry '+cls+'"><div class="top">'
+      + '<span class="tag v">'+esc(r.platform)+'</span>'
+      + '<span class="tag '+(isBad(r.kind)?'b':isGood(r.kind)?'g':'')+'">'+esc(r.kind)+'</span>'
+      + '<span class="tag">'+esc(r.page)+'</span><span class="tag">'+r.rating+'/5</span>'
+      + (r.sev? '<span class="tag">'+esc(r.sev)+'</span>':'')
+      + (r.good && r.good.length ? r.good.map(function(g){return '<span class="tag g">'+esc(g)+'</span>'}).join('') : '')
+      + '</div>'
+      + (r.comment? '<p>'+esc(r.comment)+'</p>':'')
+      + '<div class="shots" id="s-'+esc(r.id)+'"></div>'
+      + '<div class="meta">'+(r.who? esc(r.who)+' \u00b7 ':'')+new Date(r.at).toLocaleString()
+      + (r.imgs.length ? ' <button class="shotbtn" data-shots="'+esc(r.id)+'">View '+r.imgs.length+' screenshot'+(r.imgs.length>1?'s':'')+'</button>' : '')
+      + '<button class="del" data-del="'+esc(r.id)+'">Delete</button></div></div>';
+  });
+
+  h += '<div class="toolbar"><button id="csv">Download CSV</button><button id="refresh">Refresh</button>'
+     + '<button id="wipe" class="danger">Clear all data</button></div>';
+  box.innerHTML = h;
+
+  const fb = document.getElementById("filters");
+  const groups = [["platform",["iOS","Android","Web"]],["kind",["Issues","Positive"]]];
+  groups.forEach(function(g){
+    g[1].forEach(function(v){
+      const b=document.createElement("button"); b.className="chip"; b.textContent=v;
+      b.setAttribute("aria-pressed", String(filter[g[0]]===v));
+      b.onclick=function(){ filter[g[0]] = filter[g[0]]===v ? null : v; render(); };
+      fb.appendChild(b);
+    });
+  });
+  if(filter.page){
+    const b=document.createElement("button"); b.className="chip"; b.textContent=filter.page+" \u00d7";
+    b.setAttribute("aria-pressed","true"); b.onclick=function(){ filter.page=null; render(); };
+    fb.appendChild(b);
+  }
+
+  box.querySelectorAll("[data-shots]").forEach(function(btn){
+    btn.onclick = function(){
+      const rec = ALL.find(function(r){return r.id===btn.dataset.shots});
+      const tgt = document.getElementById("s-"+rec.id);
+      if(tgt.childElementCount){ tgt.innerHTML=""; btn.textContent="View "+rec.imgs.length+" screenshot"+(rec.imgs.length>1?'s':''); return; }
+      rec.imgs.forEach(function(u){
+        const im=document.createElement("img"); im.src=u; im.loading="lazy";
+        im.onclick=function(){ lightbox(u); }; tgt.appendChild(im);
+      });
+      btn.textContent="Hide screenshots";
+    };
+  });
+  box.querySelectorAll("[data-del]").forEach(function(btn){
+    btn.onclick = async function(){
+      if(!confirm("Delete this submission permanently? (Screenshot files stay in the Drive folder.)")) return;
+      try{
+        await apiPost({action:"delete", id:btn.dataset.del, code:ADMIN_PASS});
+        ALL = ALL.filter(function(r){return r.id!==btn.dataset.del}); render();
+      }catch(e){ alert("Delete failed ("+e.message+"). Refresh and try again."); }
+    };
+  });
+  document.getElementById("csv").onclick = downloadCsv;
+  document.getElementById("refresh").onclick = loadResults;
+  document.getElementById("wipe").onclick = async function(){
+    if(!confirm("This deletes every submission for the whole team. Continue?")) return;
+    try{
+      await apiPost({action:"delete", id:"ALL", code:ADMIN_PASS});
+      ALL = []; render();
+    }catch(e){ alert("Clear failed ("+e.message+")."); }
+  };
+}
+
+function lightbox(src){
+  const d=document.createElement("div"); d.className="lightbox";
+  const i=document.createElement("img"); i.src=src; d.appendChild(i);
+  d.onclick=function(){ d.remove(); }; document.body.appendChild(d);
+}
+
+function downloadCsv(){
+  const head=["date","platform","screen_page","rating","type","severity","positives","comment","tester","screenshots","viewport"];
+  const rows=ALL.map(function(r){
+    return [r.at,r.platform,r.page,r.rating,r.kind,r.sev||"",(r.good||[]).join(" / "),r.comment||"",r.who||"",r.imgs.length,r.screen||""]
+      .map(function(v){ return '"'+String(v).replace(/"/g,'""')+'"'; }).join(",");
+  });
+  const blob=new Blob([head.join(",")+"\n"+rows.join("\n")],{type:"text/csv"});
+  const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="btc-app-test-feedback.csv"; a.click();
+}
+</script>
+</body>
+</html>
