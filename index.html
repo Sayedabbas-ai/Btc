@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>BTC App - Test Feedback</title>
 </head>
-<body style="margin:0;padding:16px;background:#F2F0F4;min-height:100vh">
+<meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;400;600&display=swap" rel="stylesheet">
@@ -228,9 +228,14 @@
         <input type="text" id="who" placeholder="So we can follow up if needed">
       </div>
 
+      <div class="fld">
+        <div class="lbl"><b>Number used for testing</b><span>required</span></div>
+        <input type="text" id="testnum" inputmode="tel" placeholder="Phone number or account ID on the test device">
+      </div>
+
       <button class="submit" id="send">Send feedback</button>
       <div class="err" id="err"></div>
-      <div class="hint">Everything you send is visible to the whole testing team. &middot; v4 (Sheets)</div>
+      <div class="hint">Everything you send is visible to the whole testing team. &middot; v7 (Sheets)</div>
     </div>
 
     <div class="done" id="doneBody" hidden>
@@ -239,6 +244,9 @@
         <rect x="56" y="8" width="40" height="84" rx="20" fill="#202A44"/>
       </svg>
       <h2>Logged. Thank you.</h2>
+      <div style="font-family:Kanit,Verdana,sans-serif;font-weight:600;font-size:15px;background:#F7F6F8;border:1px dashed var(--line);border-radius:10px;padding:10px 16px;display:inline-block;margin:2px 0 12px">
+        Case ID: <span id="caseId" style="color:var(--red)"></span>
+      </div>
       <p id="doneLine">Keep testing &mdash; log the next thing whenever it comes up.</p>
       <button class="ghost" id="again">Log another</button>
     </div>
@@ -382,7 +390,7 @@ function shrink(file){
         c.width = Math.round(img.width*s); c.height = Math.round(img.height*s);
         c.getContext("2d").drawImage(img,0,0,c.width,c.height);
         out = c.toDataURL("image/jpeg", q);
-        if(out.length < 900000) break;           /* Apps Script handles large posts fine; keep shots under ~900KB */
+        if(out.length < 500000) break;           /* keep shots under ~500KB for faster uploads */
         max = Math.round(max*0.8); q = Math.max(0.4, q - 0.08);
       }
       state.images.push(out);
@@ -408,11 +416,14 @@ function drawThumbs(){
 
 /* ---------- validation + submit ---------- */
 const sendBtn = document.getElementById("send"), cmt = document.getElementById("comment");
+const testnum = document.getElementById("testnum");
 cmt.addEventListener("input", validate);
+testnum.addEventListener("input", validate);
 function isBad(k){ const e=KINDS.find(function(x){return x.k===k}); return !!(e && e.tone==="bad"); }
 function isGood(k){ const e=KINDS.find(function(x){return x.k===k}); return !!(e && e.tone==="good"); }
 function validate(){
   const ok = configured && state.platform && state.page && state.rating && state.kind &&
+             testnum.value.trim().length > 3 &&
              (!isBad(state.kind) || cmt.value.trim().length > 3);
   sendBtn.disabled = !ok;
   return ok;
@@ -423,27 +434,44 @@ sendBtn.onclick = async function(){
   if(!validate()) return;
   sendBtn.disabled = true; sendBtn.textContent = "Sending\u2026";
   const wait = function(ms){ return new Promise(function(res){ setTimeout(res, ms); }); };
-  const id = Date.now() + "-" + Math.random().toString(36).slice(2,7);
   const rec = {
-    id:id, platform:state.platform, page:state.page, rating:state.rating, kind:state.kind,
+    platform:state.platform, page:state.page, rating:state.rating, kind:state.kind,
     sev:state.sev, good:state.good.slice(), comment:cmt.value.trim(),
-    who:document.getElementById("who").value.trim(), images:state.images.slice(),
+    who:document.getElementById("who").value.trim(), testnum:testnum.value.trim(), images:state.images.slice(),
     screen: window.innerWidth+"x"+window.innerHeight, at:new Date().toISOString()
   };
-  let saved = false, lastErr = "";
+  let saved = false, lastErr = "", caseId = "";
+
+  /* optimistic UI: move to the confirmation screen right away, resolve the ID in the background */
+  const againBtn = document.getElementById("again");
+  againBtn.disabled = true; againBtn.textContent = "Finishing up\u2026";
+  document.getElementById("err").textContent = "";
+  document.getElementById("caseId").textContent = "\u2026";
+  document.getElementById("doneLine").textContent = "Sending to the team\u2026";
+  document.getElementById("formBody").hidden = true;
+  document.getElementById("doneBody").hidden = false;
+  window.scrollTo({top:0});
+
   for(let attempt = 0; attempt < 3 && !saved; attempt++){
     if(attempt) await wait(1500*attempt);
-    try{ await apiPost({action:"add", rec:rec}); saved = true; }
+    try{
+      const out = await apiPost({action:"add", rec:rec});
+      caseId = out.caseId || "";
+      saved = true;
+    }
     catch(e){ lastErr = (e && e.message) ? e.message : String(e); }
   }
   if(saved){
-    document.getElementById("err").textContent = "";
+    document.getElementById("caseId").textContent = caseId || "saved \u2014 see the sheet";
     document.getElementById("doneLine").textContent = isBad(state.kind)
       ? "That one is flagged for the team. Keep testing \u2014 log the next thing whenever it comes up."
       : "Good to hear. Keep testing \u2014 log the next thing whenever it comes up.";
-    document.getElementById("formBody").hidden = true;
-    document.getElementById("doneBody").hidden = false;
+    againBtn.disabled = false; againBtn.textContent = "Log another";
   } else {
+    /* bring the tester back to their filled-in form */
+    document.getElementById("doneBody").hidden = true;
+    document.getElementById("formBody").hidden = false;
+    againBtn.disabled = false; againBtn.textContent = "Log another";
     document.getElementById("err").textContent =
       "Couldn't save (" + lastErr + "). Check your connection and tap Send again \u2014 your entry is still here.";
     sendBtn.disabled = false;
@@ -507,7 +535,7 @@ function normalize(o){
     id: String(o.id), at: String(o.at), platform: String(o.platform||""), page: String(o.page||""),
     rating: Number(o.rating)||0, kind: String(o.kind||""), sev: String(o.sev||""),
     good: o.good ? String(o.good).split(" / ").filter(Boolean) : [],
-    comment: String(o.comment||""), who: String(o.who||""), screen: String(o.screen||""),
+    comment: String(o.comment||""), who: String(o.who||""), testnum: String(o.testnum||""), screen: String(o.screen||""),
     imgs: [o.img1, o.img2, o.img3].map(function(u){return String(u||"")}).filter(Boolean)
   };
 }
@@ -573,6 +601,7 @@ function render(){
   rows.forEach(function(r){
     const cls = isBad(r.kind) ? "bad" : isGood(r.kind) ? "good" : "";
     h += '<div class="entry '+cls+'"><div class="top">'
+      + '<span class="tag" style="background:var(--indigo);color:#fff">'+esc(r.id)+'</span>'
       + '<span class="tag v">'+esc(r.platform)+'</span>'
       + '<span class="tag '+(isBad(r.kind)?'b':isGood(r.kind)?'g':'')+'">'+esc(r.kind)+'</span>'
       + '<span class="tag">'+esc(r.page)+'</span><span class="tag">'+r.rating+'/5</span>'
@@ -581,7 +610,7 @@ function render(){
       + '</div>'
       + (r.comment? '<p>'+esc(r.comment)+'</p>':'')
       + '<div class="shots" id="s-'+esc(r.id)+'"></div>'
-      + '<div class="meta">'+(r.who? esc(r.who)+' \u00b7 ':'')+new Date(r.at).toLocaleString()
+      + '<div class="meta">'+(r.who? esc(r.who)+' \u00b7 ':'')+(r.testnum? '\u260e '+esc(r.testnum)+' \u00b7 ':'')+new Date(r.at).toLocaleString()
       + (r.imgs.length ? ' <button class="shotbtn" data-shots="'+esc(r.id)+'">View '+r.imgs.length+' screenshot'+(r.imgs.length>1?'s':'')+'</button>' : '')
       + '<button class="del" data-del="'+esc(r.id)+'">Delete</button></div></div>';
   });
@@ -645,9 +674,9 @@ function lightbox(src){
 }
 
 function downloadCsv(){
-  const head=["date","platform","screen_page","rating","type","severity","positives","comment","tester","screenshots","viewport"];
+  const head=["case_id","date","platform","screen_page","rating","type","severity","positives","comment","tester","test_number","screenshots","viewport"];
   const rows=ALL.map(function(r){
-    return [r.at,r.platform,r.page,r.rating,r.kind,r.sev||"",(r.good||[]).join(" / "),r.comment||"",r.who||"",r.imgs.length,r.screen||""]
+    return [r.id,r.at,r.platform,r.page,r.rating,r.kind,r.sev||"",(r.good||[]).join(" / "),r.comment||"",r.who||"",r.testnum||"",r.imgs.length,r.screen||""]
       .map(function(v){ return '"'+String(v).replace(/"/g,'""')+'"'; }).join(",");
   });
   const blob=new Blob([head.join(",")+"\n"+rows.join("\n")],{type:"text/csv"});
